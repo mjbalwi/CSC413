@@ -14,26 +14,39 @@ public enum Color {
     WHITE,
     BLACK;
 
-    /** The side whose turn it is after this one moves. */
+
+    /**
+     * The side whose turn it is after this one moves.
+     * Returns {@link #BLACK} if this is {@link #WHITE}, and vice versa.
+     */
     public Color opposite() {
-        throw new UnsupportedOperationException("M0b: your turn");
+        return (this == Color.WHITE) ? Color.BLACK : Color.WHITE;
     }
 
     /**
      * The direction pawns of this color advance, measured in ranks.
-     * White moves up the board (+1), black moves down (-1).
+     * Returns {@code +1} for {@link #WHITE} (moving up the board) and
+     * {@code -1} for {@link #BLACK} (moving down the board).
      */
     public int pawnDirection() {
-        throw new UnsupportedOperationException("M0b: your turn");
+        return (this == Color.WHITE) ? 1 : -1;
     }
 
-    /** The rank pawns of this color start on (0-based). */
+    /**
+     * The rank pawns of this color start on (0-based).
+     * Returns {@code 1} for {@link #WHITE} and {@code 6} for
+     * {@link #BLACK}.
+     */
     public int pawnStartRank() {
-        throw new UnsupportedOperationException("M0b: your turn");
+        return (this == Color.WHITE) ? 1 : 6;
     }
 
-    /** The rank a pawn of this color must reach to promote (0-based). */
+    /**
+     * The rank a pawn of this color must reach to promote (0-based).
+     * Returns {@code 7} for {@link #WHITE} and {@code 0} for
+     * {@link #BLACK}.
+     */
     public int promotionRank() {
-        throw new UnsupportedOperationException("M0b: your turn");
+        return (this == Color.WHITE) ? 7 : 0;
     }
 }
