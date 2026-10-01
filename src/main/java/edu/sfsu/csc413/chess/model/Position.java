@@ -66,7 +66,7 @@ public record Position(int file, int rank) {
         if (!(isOnBoard(newFile, newRank))) {
             return null;
         } else {
-            return new Position(fileDelta, rankDelta);
+            return new Position(newFile, newRank);
         }
     }
 
