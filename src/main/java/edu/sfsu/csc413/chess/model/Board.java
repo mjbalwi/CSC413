@@ -123,4 +123,16 @@ public class Board {
         return result;
     }
 
+    public Position kingPosition(Color color) {
+        List<Position> positions = positionsOf(color);
+        for (Position position : positions) {
+            if (pieceAt(position).type() == PieceType.KING) {
+                return position;
+            }
+        }
+
+        return null;
+    }
+
+
 }

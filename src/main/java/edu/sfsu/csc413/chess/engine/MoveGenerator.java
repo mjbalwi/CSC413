@@ -2,7 +2,6 @@ package edu.sfsu.csc413.chess.engine;
 
 import edu.sfsu.csc413.chess.model.*;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +38,16 @@ public final class MoveGenerator {
      * when it tightens.
      */
     public static List<Move> legalMoves(Board board, Color color) {
-        return pseudoLegalMoves(board, color);
+        List<Move> movesWithOutCheck = new ArrayList<>();
+
+        for (Move move : pseudoLegalMoves(board, color)) {
+            board.apply(move);
+            if (!isInCheck(board, color)) {
+                movesWithOutCheck.add(move);
+            }
+            board.undo(move);
+        }
+        return movesWithOutCheck;
     }
 
     /**
@@ -60,5 +68,28 @@ public final class MoveGenerator {
         }
 
         return moves;
+    }
+
+    public static boolean isInCheck(Board board, Color color) {
+        Position king = board.kingPosition(color);
+
+        return isAttacked(board, king, color.opposite());
+    }
+
+    public static boolean isAttacked(Board board, Position target, Color attacker) {
+        // each piece in color attacker is the from
+        List<Position> positions = board.positionsOf(attacker);
+        for (Position position : positions) {
+            if (position != null) {
+                Position from = position;
+                Piece piece = board.pieceAt(from);
+
+                if (piece.attacks(board, from, target)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
