@@ -40,7 +40,7 @@ public record Move(Position from, Position to, Piece moved, Piece captured, Piec
      * A pawn reaching the far rank and becoming {@code promotesTo}.
      */
     public static Move promotion(Position from, Position to, Piece moved, Piece captured, PieceType promotesTo) {
-        return new Move(from, to, moved, moved, promotesTo);
+        return new Move(from, to, moved, captured, promotesTo);
     }
 
     public boolean isCapture() {

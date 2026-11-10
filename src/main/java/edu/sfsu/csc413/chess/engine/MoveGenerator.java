@@ -1,6 +1,7 @@
 package edu.sfsu.csc413.chess.engine;
 
 import edu.sfsu.csc413.chess.model.*;
+import edu.sfsu.csc413.chess.engine.GameStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,5 +92,20 @@ public final class MoveGenerator {
         }
 
         return false;
+    }
+
+    public static GameStatus status(Board board, Color sideToMove) {
+        if (isInCheck(board, sideToMove)) {
+            if (!legalMoves(board, sideToMove).isEmpty()) {
+                return GameStatus.CHECK;
+            }
+            return GameStatus.CHECKMATE;
+        }
+
+        if (!legalMoves(board, sideToMove).isEmpty()) {
+            return GameStatus.IN_PROGRESS;
+        }
+
+        return GameStatus.STALEMATE;
     }
 }

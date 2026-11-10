@@ -1,6 +1,11 @@
 package edu.sfsu.csc413.chess.view;
 
 import edu.sfsu.csc413.chess.engine.Game;
+import edu.sfsu.csc413.chess.engine.GameStatus;
+import edu.sfsu.csc413.chess.model.Move;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Connects the player's decisions to the game: carry out what was asked, then
@@ -19,6 +24,7 @@ public class GameController {
 
     private final Game game;
     private final BoardView view;
+    private boolean quit = false;
 
     public GameController(Game game, BoardView view) {
         this.game = game;
@@ -35,7 +41,9 @@ public class GameController {
      * view with {@link BoardView#start}.
      */
     public void start() {
-        throw new UnsupportedOperationException("M6: implement GameController.start");
+        view.showMessage("Welcome to CSC 413 Chess!");
+        view.render(game);
+        view.start(this);
     }
 
     /**
@@ -46,7 +54,10 @@ public class GameController {
      * {@code start}; an event-driven view never calls it.
      */
     public void runLoop() {
-        throw new UnsupportedOperationException("M6: implement GameController.runLoop");
+        while (!quit && !game.isGameOver()) {
+            PlayerAction action = view.nextAction(game);
+            handle(action);
+        }
     }
 
     /**
@@ -55,8 +66,54 @@ public class GameController {
      * <p>Every route into the game goes through here: {@link #runLoop()} calls
      * it, and so will a button's click handler in M7. The handout lists what
      * each of the four actions does and what the player is told.
+     *
+     * big code smell.... long switch case.... will fix when I stop procrastinating
+     * .... until next time.....
      */
     public void handle(PlayerAction action) {
-        throw new UnsupportedOperationException("M6: implement GameController.handle");
+        switch (action) {
+            case PlayerAction.Move move -> {
+                String notation = move.notation();
+                Optional<Move> legal = game.findLegalMove(notation);
+                if (legal.isEmpty() && notation.length() == 4) {
+                    char letter = Character.toLowerCase(view.promotionChoice(game).symbol());
+                    legal = game.findLegalMove(notation + letter);
+                }
+                if (legal.isPresent()) {
+                    game.play(legal.get());
+                } else {
+                    view.showMessage("Not a legal move: '" + notation + "'.");
+                }
+            }
+            case PlayerAction.Undo undo -> {
+                if (game.undoLastMove().isEmpty()) {
+                    view.showMessage("Nothing to undo.");
+                }
+            }
+            case PlayerAction.ShowMoves showMoves -> {
+                List<String> moves = game.legalMoves().stream()
+                        .map(Move::toString)
+                        .sorted()
+                        .toList();
+                view.showMessage(moves.size() + " legal moves: " + String.join(" ", moves));
+            }
+            case PlayerAction.Quit q -> {
+                quit = true;
+                view.showMessage("Goodbye.");
+                view.close();
+                return;
+            }
+        }
+
+        view.render(game);
+
+        if (game.isGameOver()) {
+            if (game.status() == GameStatus.CHECKMATE) {
+                view.showMessage("Checkmate. " + game.sideToMove().opposite() + " wins.");
+            } else {
+                view.showMessage("Stalemate. The game is a draw.");
+            }
+            view.close();
+        }
     }
 }
