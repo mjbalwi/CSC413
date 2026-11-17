@@ -21,12 +21,8 @@ Here are the parameters for each:
 - The other view. Any BoardView that is not Swing and is more than a new 
  glyph set for the existing views: its own class, playable to the end of 
  a game through your controller, chosen by a word on the command line. 
- Name that word in m7-submission.md. It must use only the JDK. Some 
- ideas:
-- a terminal board with a border, drawn from the side to move;
-- a terminal board in ANSI colour;
-- a view that plays a game from a file of moves;
-- a page in a browser, served with the JDK's com.sun.net.httpserver.
+ Name that word in m7-submission.md. It must use only the JDK. Some
+- Do this one: a page in a browser, served with the JDK's com.sun.net.httpserver.
 
 
 ## Do
