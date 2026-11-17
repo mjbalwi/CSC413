@@ -16,6 +16,7 @@ Here are the parameters for each:
 - An Undo button sends new PlayerAction.Undo().
 - A promotion doesn't crash. Always choosing a queen is acceptable.
 - start builds the window and returns. It never calls controller.runLoop().
+- Create animations when a player captures a piece 
 
 ## The other View
 - The other view. Any BoardView that is not Swing and is more than a new 
