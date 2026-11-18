@@ -14,6 +14,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.WindowConstants;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -69,10 +70,23 @@ public class SwingView implements BoardView {
     private JLabel messageLabel;
     private String pendingMessage = " ";
 
+    /** How long the capture animation runs, and how often it repaints. */
+    private static final int CAPTURE_MILLIS = 450;
+    private static final int FRAME_MILLIS = 15;
+
+    /** History length at the last render, to spot a move that just happened. */
+    private int lastHistorySize;
+
+    /** The capture being animated, or null, and when it started. */
+    private Move animating;
+    private long animationStart;
+    private final Timer animationTimer = new Timer(FRAME_MILLIS, e -> onAnimationTick());
+
     @Override
     public void start(GameController controller) {
         this.controller = controller;
         this.game = controller.game();
+        this.lastHistorySize = game.history().size();
         SwingUtilities.invokeLater(this::buildWindow);
         // Return straight away: from here on the window is driven by clicks.
     }
@@ -80,7 +94,10 @@ public class SwingView implements BoardView {
     @Override
     public void render(Game game) {
         this.game = game;
-        onEventThread(this::refresh);
+        onEventThread(() -> {
+            noticeNewMove(game);
+            refresh();
+        });
     }
 
     @Override
@@ -184,6 +201,9 @@ public class SwingView implements BoardView {
      * {@link #promotionChoice} (queen, by default) for the piece.
      */
     private void onSquareClicked(Position square) {
+        if (animating != null) {
+            return;
+        }
         if (game.status().isGameOver()) {
             messageLabel.setText("The game is over. Press Undo to take back a move.");
             return;
@@ -209,6 +229,40 @@ public class SwingView implements BoardView {
             controller.handle(new PlayerAction.Move(notation));
         }
         boardPanel.repaint();
+    }
+
+    // ---------------------------------------------------------------- animation
+
+    /** Starts the capture animation if the last render added a capture. */
+    private void noticeNewMove(Game game) {
+        List<Move> history = game.history();
+        if (history.size() == lastHistorySize + 1 && history.getLast().isCapture()) {
+            animating = history.getLast();
+            animationStart = System.currentTimeMillis();
+            animationTimer.restart();
+        } else {
+            stopAnimation();
+        }
+        lastHistorySize = history.size();
+    }
+
+    private double animationProgress() {
+        double t = (System.currentTimeMillis() - animationStart) / (double) CAPTURE_MILLIS;
+        return Math.min(1.0, Math.max(0.0, t));
+    }
+
+    private void onAnimationTick() {
+        if (animationProgress() >= 1.0) {
+            stopAnimation();
+        }
+        if (boardPanel != null) {
+            boardPanel.repaint();
+        }
+    }
+
+    private void stopAnimation() {
+        animating = null;
+        animationTimer.stop();
     }
 
     // ------------------------------------------------------------------ drawing
@@ -263,6 +317,7 @@ public class SwingView implements BoardView {
                     : game.legalMoves().stream().filter(m -> m.from().equals(selected)).toList();
             Position checkedKing = game.status() == GameStatus.CHECK || game.status() == GameStatus.CHECKMATE
                     ? board.kingPosition(game.sideToMove()) : null;
+            Move anim = animating;
 
             for (int row = 0; row < 8; row++) {
                 for (int column = 0; column < 8; column++) {
@@ -285,8 +340,10 @@ public class SwingView implements BoardView {
 
                     drawCoordinates(g2, square, row, column, x, y, size);
 
+                    // During a capture animation the arriving piece is drawn
+                    // separately, sliding in, so skip it on its destination square.
                     Piece piece = board.pieceAt(square);
-                    if (piece != null) {
+                    if (piece != null && !(anim != null && square.equals(anim.to()))) {
                         drawPiece(g2, piece, x, y, size);
                     }
                 }
@@ -304,6 +361,63 @@ public class SwingView implements BoardView {
                     int inset = size / 16;
                     g2.drawOval(x + inset, y + inset, size - 2 * inset, size - 2 * inset);
                 }
+            }
+
+            if (anim != null) {
+                drawCapture(g2, anim, size);
+            }
+        }
+
+        /**
+         * One frame of a capture: the victim shrinks, spins and fades out with
+         * a burst of rays, while the attacker slides from its old square onto
+         * the target.
+         */
+        private void drawCapture(Graphics2D g2, Move move, int size) {
+            double t = animationProgress();
+            double ease = 1 - Math.pow(1 - t, 3);
+            int tx = move.to().file() * size;
+            int ty = (7 - move.to().rank()) * size;
+            double cx = tx + size / 2.0;
+            double cy = ty + size / 2.0;
+
+            // Victim: spin, shrink and fade over the first two thirds.
+            double fade = Math.max(0.0, 1.0 - t * 1.5);
+            if (fade > 0 && move.captured() != null) {
+                Graphics2D v = (Graphics2D) g2.create();
+                v.setComposite(java.awt.AlphaComposite.getInstance(
+                        java.awt.AlphaComposite.SRC_OVER, (float) fade));
+                double scale = 0.4 + 0.6 * fade;
+                v.rotate(t * Math.PI, cx, cy);
+                v.translate(cx, cy);
+                v.scale(scale, scale);
+                v.translate(-cx, -cy);
+                drawPiece(v, move.captured(), tx, ty, size);
+                v.dispose();
+            }
+
+            // Burst of rays from the centre of the square.
+            Graphics2D b = (Graphics2D) g2.create();
+            float alpha = (float) Math.max(0.0, 1.0 - t);
+            b.setColor(new java.awt.Color(1f, 0.55f, 0.1f, alpha));
+            b.setStroke(new BasicStroke(Math.max(2f, size / 20f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            double inner = size * 0.15 + size * 0.25 * ease;
+            double outer = inner + size * 0.2 * (1 - t);
+            for (int i = 0; i < 8; i++) {
+                double angle = i * Math.PI / 4;
+                b.drawLine((int) (cx + Math.cos(angle) * inner), (int) (cy + Math.sin(angle) * inner),
+                        (int) (cx + Math.cos(angle) * outer), (int) (cy + Math.sin(angle) * outer));
+            }
+            b.dispose();
+
+            // Attacker: what now stands on the target (a queen after a promotion).
+            Piece arriving = game.board().pieceAt(move.to());
+            if (arriving != null) {
+                int fx = move.from().file() * size;
+                int fy = (7 - move.from().rank()) * size;
+                int x = (int) Math.round(fx + (tx - fx) * ease);
+                int y = (int) Math.round(fy + (ty - fy) * ease);
+                drawPiece(g2, arriving, x, y, size);
             }
         }
 

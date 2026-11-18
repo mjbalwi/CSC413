@@ -35,13 +35,13 @@ through `start`, like `ConsoleView`.
   identified in the AGENTS.md file provided in the slides
 
 ## 6. Review
-- One place of the generated code that matters is: private Game game; (SwingView.java 60). This is a perfect example of the MVC
+- One place of the generated code that matters is: private Game game; (SwingView.java 61). This is a perfect example of the MVC
   architecture in action because as we know the view depends on the Model which is game here and it creates an instance of it to change the
   change the model as the user plays through this view.
 
-- Another place of generated code that matters is: onSquareClicked method (SwingView.java 186) because it is handles the half-state of a selected square
+- Another place of generated code that matters is: onSquareClicked method (SwingView.java 203) because it is handles the half-state of a selected square
 
-- The third generated code that matters is: the block of code on (SwingView.java 264) where the view adds the decoration for when the King is in check. This is
+- The third generated code that matters is: the block of code on (SwingView.java 318) where the view adds the decoration for when the King is in check. This is
   an important piece of code because it checks the status of the King by talking to the Model, thus preserving the MVC design pattern.
 
 
@@ -50,7 +50,7 @@ through `start`, like `ConsoleView`.
 ### Where does the state of a half-finished move (the selected square) live?
 
 **Swing — Run 1:**  
-`SwingView.java`, line 64. The half-finished move lives in a `Position` variable called `selected`. When the window is built, `selected` is set to `null`. Depending on which square the user selects, `selected` is updated accordingly. If the user selects an invalid square (an empty square or one with a piece of the wrong color), `selected` is set to `null`. If the user selects a square with a piece of the correct color, `selected` is set to that piece.
+`SwingView.java`, line 65. The half-finished move lives in a `Position` variable called `selected`. When the window is built, `selected` is set to `null`. Depending on which square the user selects, `selected` is updated accordingly. If the user selects an invalid square (an empty square or one with a piece of the wrong color), `selected` is set to `null`. If the user selects a square with a piece of the correct color, `selected` is set to that piece.
 
 **Swing — Run 2:**  
 `SwingView.java`, line 76. Works the same way as Run 1.
@@ -67,7 +67,7 @@ Not applicable to the ANSI view.
 ### How does each view find out which moves are legal?
 
 **Swing — Run 1:**  
-`SwingView.java`, line 209. The view passes the move to the controller as a `PlayerAction.Move` using the `handler()` method. This preserves the MVC architecture by allowing the controller to handle the request to the model.
+`SwingView.java`, line 229. The view passes the move to the controller as a `PlayerAction.Move` using the `handler()` method. This preserves the MVC architecture by allowing the controller to handle the request to the model.
 
 **Swing — Run 2:**  
 `SwingView.java`, line 222. The view iterates through `game.legalMoves()`. Moves whose `Move.from()` matches the selected piece are added to a list called `targets`, which contains the legal moves for that piece. Although the view only reads the legal moves from the model, this preserves MVC. However, it leaves the controller out of the loop, unlike Run 1.
@@ -102,10 +102,11 @@ Personally, Runs 1 and 2 are easier for me to change because I have a better und
 
 
 ## 8. Applied
-TODO
+I added animation logic from run 2 for the Swingview. noticeNewMove line 237 and drawCapture line 376, both in SwingView.java.
 
 ## 9. Debugger evidence
-TODO
+I set a breakpoint in onSquareClicked() and moved the white pawn from e2 to e4. On the first click, square was e2 and selected was null. The board showed White to move. After the click, e2 was selected. On the second click, the pawn moved to e4. This matched what I expected.
 
 ## 10. By hand
-TODO
+
+Changed the color of the selected highlight from yellow to blue. 
