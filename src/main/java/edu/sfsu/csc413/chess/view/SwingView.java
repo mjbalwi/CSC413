@@ -51,7 +51,7 @@ public class SwingView implements BoardView {
 
     private static final java.awt.Color LIGHT = new java.awt.Color(240, 217, 181);
     private static final java.awt.Color DARK = new java.awt.Color(181, 136, 99);
-    private static final java.awt.Color SELECTED = new java.awt.Color(246, 246, 105, 200);
+    private static final java.awt.Color SELECTED = new java.awt.Color(0, 29, 255, 108);
     private static final java.awt.Color LAST_MOVE = new java.awt.Color(205, 210, 106, 150);
     private static final java.awt.Color TARGET = new java.awt.Color(20, 85, 30, 140);
     private static final java.awt.Color IN_CHECK = new java.awt.Color(220, 40, 40, 170);
